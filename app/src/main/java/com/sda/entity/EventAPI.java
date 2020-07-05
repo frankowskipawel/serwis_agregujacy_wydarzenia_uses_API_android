@@ -1,6 +1,6 @@
 package com.sda.entity;
 
-
+//
 public class EventAPI {
 
     private int id;

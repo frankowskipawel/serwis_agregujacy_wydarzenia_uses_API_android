@@ -1,5 +1,6 @@
 package com.sda.fragments;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,7 +14,6 @@ import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.fragment.NavHostFragment;
 
 import com.sda.R;
 import com.sda.repository.EventRepository;
@@ -29,6 +29,10 @@ import java.util.regex.Pattern;
 import static com.android.volley.VolleyLog.TAG;
 
 public class EventsFragment extends Fragment {
+
+
+    ProgressDialog progressDialog;
+
 
     @Override
     public View onCreateView(
@@ -50,6 +54,10 @@ public class EventsFragment extends Fragment {
         materialAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(materialAdapter);
 
+        progressDialog = ProgressDialog.show(getContext(), "ŁADOWANIE", "Proszę czekać.", true);
+        progressDialog.show();
+
+
      spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
          @Override
          public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -58,6 +66,8 @@ public class EventsFragment extends Fragment {
              List<Map<String, String>> data = new ArrayList<Map<String, String>>();
              EventRepository eventRepository = new EventRepository();
              try {
+
+
                  data = eventRepository.getEventsForListView(getContext(),spinner.getSelectedItem().toString());
 
                  SimpleAdapter adapter = new SimpleAdapter(getContext(), data,
@@ -65,6 +75,7 @@ public class EventsFragment extends Fragment {
                          new String[]{"First Line", "Second Line"},
                          new int[]{android.R.id.text1, android.R.id.text2});
                  listView.setAdapter(adapter);
+                 progressDialog.dismiss();
              } catch (Exception e) {
                  e.printStackTrace();
              }
@@ -101,13 +112,7 @@ public class EventsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        view.findViewById(R.id.button_second).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                NavHostFragment.findNavController(EventsFragment.this)
-                        .navigate(R.id.action_SecondFragment_to_FirstFragment);
-            }
-        });
+
     }
 
     public static String getIdFromString(String header) {

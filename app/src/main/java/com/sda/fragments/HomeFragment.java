@@ -28,8 +28,9 @@ public class HomeFragment extends Fragment {
         view.findViewById(R.id.button_first).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                NavHostFragment.findNavController(HomeFragment.this)
-                        .navigate(R.id.action_FirstFragment_to_SecondFragment);
+                EventsFragment eventsFragment = new EventsFragment();
+                getFragmentManager().beginTransaction().replace(R.id.nav_host_fragment, eventsFragment, eventsFragment.getTag()).addToBackStack("tag").commit(); //addToBackStack is back after back key pressed
+
             }
         });
     }

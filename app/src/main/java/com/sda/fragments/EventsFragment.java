@@ -19,8 +19,11 @@ import com.sda.R;
 import com.sda.repository.EventRepository;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 import static com.android.volley.VolleyLog.TAG;
@@ -34,7 +37,7 @@ public class EventsFragment extends Fragment {
     ) {
         final View view = inflater.inflate(R.layout.fragment_events, container, false);
 
-        final ListView listView = view.findViewById(R.id.events_listView);
+        final ListView listView = (ListView) view.findViewById(R.id.events_listView);
 
         final Spinner spinner = view.findViewById(R.id.spinner);
         List<String> items = new ArrayList<String>();
@@ -74,6 +77,24 @@ public class EventsFragment extends Fragment {
          }
      });
 
+        // CLICK ITEM FROM LISTVIEW //
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int index, long id) {
+                Object clickItemObj = adapterView.getAdapter().getItem(index);
+                HashMap clickItemMap = (HashMap) clickItemObj;
+                String header = (String) clickItemMap.get("First Line");
+                String content = (String) clickItemMap.get("Second Line");
+
+                ShowEventFragment fragment = new ShowEventFragment();
+                fragment.setEventId(Integer.parseInt(getIdFromString(header)));
+                getFragmentManager().beginTransaction().replace(R.id.nav_host_fragment, fragment, fragment.getTag()).addToBackStack("tag").commit(); //addToBackStack is back after back key pressed
+
+            }
+        });
+
+
+
         return view;
     }
 
@@ -87,5 +108,17 @@ public class EventsFragment extends Fragment {
                         .navigate(R.id.action_SecondFragment_to_FirstFragment);
             }
         });
+    }
+
+    public static String getIdFromString(String header) {
+
+        Pattern pattern = Pattern.compile("^#\\d+ ");
+        Matcher matcher = pattern.matcher(header);
+
+        while (matcher.find()) {
+            String id = matcher.group().substring(1, matcher.group().length() - 1);
+            return id;
+        }
+        return null;
     }
 }

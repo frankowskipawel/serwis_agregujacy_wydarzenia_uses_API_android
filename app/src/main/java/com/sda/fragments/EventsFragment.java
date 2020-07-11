@@ -1,8 +1,7 @@
 package com.sda.fragments;
 
-import android.app.ProgressDialog;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import com.sda.R;
 import com.sda.repository.EventRepository;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,12 +26,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-import static com.android.volley.VolleyLog.TAG;
-
 public class EventsFragment extends Fragment {
 
-
-    ProgressDialog progressDialog;
+    ListView listView;
+    Spinner spinner;
 
 
     @Override
@@ -41,9 +39,9 @@ public class EventsFragment extends Fragment {
     ) {
         final View view = inflater.inflate(R.layout.fragment_events, container, false);
 
-        final ListView listView = (ListView) view.findViewById(R.id.events_listView);
+        listView = (ListView) view.findViewById(R.id.events_listView);
 
-        final Spinner spinner = view.findViewById(R.id.spinner);
+        spinner = view.findViewById(R.id.spinner);
         List<String> items = new ArrayList<String>();
         items.add("all");
         items.add("future");
@@ -54,41 +52,21 @@ public class EventsFragment extends Fragment {
         materialAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(materialAdapter);
 
-        progressDialog = ProgressDialog.show(getContext(), "ŁADOWANIE", "Proszę czekać.", true);
-        progressDialog.show();
 
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-     spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-         @Override
-         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                startAsyncTask(view);
+            }
 
-             Log.i(TAG, "onItemSelected: ");
-             List<Map<String, String>> data = new ArrayList<Map<String, String>>();
-             EventRepository eventRepository = new EventRepository();
-             try {
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
 
+            }
+        });
 
-                 data = eventRepository.getEventsForListView(getContext(),spinner.getSelectedItem().toString());
-
-                 SimpleAdapter adapter = new SimpleAdapter(getContext(), data,
-                         android.R.layout.simple_list_item_2,
-                         new String[]{"First Line", "Second Line"},
-                         new int[]{android.R.id.text1, android.R.id.text2});
-                 listView.setAdapter(adapter);
-                 progressDialog.dismiss();
-             } catch (Exception e) {
-                 e.printStackTrace();
-             }
-
-         }
-
-         @Override
-         public void onNothingSelected(AdapterView<?> parent) {
-
-         }
-     });
-
-        // CLICK ITEM FROM LISTVIEW //
+        // CLICKED ITEM ON LISTVIEW //
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int index, long id) {
@@ -104,7 +82,7 @@ public class EventsFragment extends Fragment {
             }
         });
 
-
+        startAsyncTask(view);
 
         return view;
     }
@@ -125,5 +103,60 @@ public class EventsFragment extends Fragment {
             return id;
         }
         return null;
+    }
+
+    ////////////////////////////////////Async task/////////////////////////////////////////
+
+    public void startAsyncTask(View v) {
+        GetDataFromApiAsyncTask task = new GetDataFromApiAsyncTask(this);
+        task.execute();
+    }
+
+    private class GetDataFromApiAsyncTask extends AsyncTask<Integer, Integer, String> {
+
+        private WeakReference<EventsFragment> activityWeakReference;
+        private SimpleAdapter adapter;
+
+        GetDataFromApiAsyncTask(EventsFragment activity) {
+            activityWeakReference = new WeakReference<EventsFragment>(activity);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(Integer... integers) {
+
+            List<Map<String, String>> data = new ArrayList<Map<String, String>>();
+            EventRepository eventRepository = new EventRepository();
+            try {
+                data = eventRepository.getEventsForListView(getContext(), spinner.getSelectedItem().toString());
+
+                adapter = new SimpleAdapter(getContext(), data,
+                        android.R.layout.simple_list_item_2,
+                        new String[]{"First Line", "Second Line"},
+                        new int[]{android.R.id.text1, android.R.id.text2});
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return "OK";
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+            return;
+
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            EventsFragment activity = activityWeakReference.get();
+            activity.listView.setAdapter(adapter);
+        }
     }
 }
